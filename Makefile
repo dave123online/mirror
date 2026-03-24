@@ -17,6 +17,9 @@ FLAGS = -g -W -Wall -Wextra -Wno-unused-parameter -Wno-incompatible-pointer-type
 
 LPATH = ./librog/librog.a
 
+TEST_FILES = src/parse_input.c my_secured_malloc/manage_memory.c\
+	tests/*.c
+
 all:
 	cd librog && make && cd ..
 	$(CC) -o $(NAME) $(SRC) $(FLAGS) $(LPATH)|| true
@@ -24,8 +27,17 @@ all:
 
 clean:
 	cleaner || true
+	rm -f unit_tests
 
 fclean: clean
 	rm -f $(NAME) || true
 
 re: fclean all
+
+unit_tests:
+	cd librog && make && cd ..
+	$(CC) -o unit_tests $(TEST_FILES) $(LPATH) -lcriterion --coverage
+	cd librog && make fclean && cd ..
+
+tests_run: unit_tests
+	./unit_tests

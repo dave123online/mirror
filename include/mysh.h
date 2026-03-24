@@ -36,6 +36,33 @@ typedef struct control_s {
     mem_t *mem;
     char **a_env;
 } control_t;
+typedef struct cmd_s {
+    char **args;
+    char *infile;
+    char *outfile;
+    int append;
+    char *herodoc_delim;
+} cmd_t;
+typedef struct task_s {
+    cmd_t **cmds;
+    int cmd_count;
+    struct task_s *next;
+    mem_t *mem;
+} task_t;
+typedef enum token_type {
+    WORD,
+    PIPE,
+    SEMICOLON,
+    REDIR_IN,
+    REDIR_OUT,
+    APPEND,
+    HERODOC
+} tk_type_t;
+typedef struct token {
+    tk_type_t type;
+    char *value;
+    struct token *next;
+} token_t;
 int handle_error(int error_code);
 int change_directory(char **cmd_line, env_t *env, char *prev_dir, mem_t *mem);
 env_t *array_to_list(char **env, mem_t *mem);
@@ -53,4 +80,5 @@ void display_msg(int sig, int status);
 char *rm_exec_sign(char *s);
 int exec_builtin_3(my_sh_t *args, control_t *ctrl);
 void add_to_history(char *cmd);
+token_t *tokenize_input(char *input, mem_t *mem);
 #endif
