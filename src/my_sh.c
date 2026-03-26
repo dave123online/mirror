@@ -84,17 +84,17 @@ static void run_command(my_sh_t *args, control_t *ctrl)
 
     handle_signals();
     handle_signals_2();
-    if (((args->cmd_array[0][0] == '.' || args->cmd_array[0][1] == '/')
-            || (args->cmd_array[0][0] == '/'))
-        && !access(args->cmd_array[0], X_OK)) {
-        r_value = execve(args->cmd_array[0],
-            args->cmd_array, ctrl->a_env);
+    if (((args->tasks->cmds->args[0][0] == '.' || args->tasks->cmds->args[0][1] == '/')
+            || (args->tasks->cmds->args[0][0] == '/'))
+        && !access(args->tasks->cmds->args[0], X_OK)) {
+        r_value = execve(args->tasks->cmds->args[0],
+            args->tasks->cmds->args, ctrl->a_env);
     }
     if (r_value == -1) {
-        my_perror("%s: %s\n", args->cmd_array[0], strerror(errno));
+        my_perror("%s: %s\n", args->tasks->cmds->args[0], strerror(errno));
         exit(0);
     }
-    if (!parse_path(args->cmd_array, ctrl)) {
+    if (!parse_path(args->tasks->cmds->args, ctrl)) {
         my_perror("%s: Command not found.\n", delete_newline(args->input));
         free_all(ctrl->mem);
         free(args->input);
@@ -104,20 +104,20 @@ static void run_command(my_sh_t *args, control_t *ctrl)
 
 static int exec_builtin2(my_sh_t *args, control_t *ctrl)
 {
-    if (!my_strcmp(args->cmd_array[0], "cd")) {
+    if (!my_strcmp(args->tasks->cmds->args[0], "cd")) {
         getcwd(args->temp, 90);
-        if (!change_directory(args->cmd_array, ctrl->env,
+        if (!change_directory(args->tasks->cmds->args, ctrl->env,
                 args->prev_dir, ctrl->mem))
             args->prev_dir = xstrdup(args->temp, ctrl->mem);
         return 1;
     }
-    if (!my_strcmp(args->cmd_array[0], "env")
-        || (!my_strcmp(args->cmd_array[0], "/usr/bin/env"))) {
-        print_env(ctrl->env, args->cmd_array);
+    if (!my_strcmp(args->tasks->cmds->args[0], "env")
+        || (!my_strcmp(args->tasks->cmds->args[0], "/usr/bin/env"))) {
+        print_env(ctrl->env, args->tasks->cmds->args);
         return 1;
     }
-    if (!my_strcmp(args->cmd_array[0], "setenv")) {
-        x_setenv(&ctrl->env, args->cmd_array, ctrl->mem);
+    if (!my_strcmp(args->tasks->cmds->args[0], "setenv")) {
+        x_setenv(&ctrl->env, args->tasks->cmds->args, ctrl->mem);
         return 1;
     }
     return (exec_builtin_3(args, ctrl) != 0);
@@ -140,8 +140,9 @@ static int exec_builtin(my_sh_t *args, control_t *ctrl)
     add_to_history(args->input);
     if (!my_strcmp(args->input, "\n"))
         return 1;
-    args->cmd_array = split_string(delete_newline(args->input), ' ', ctrl->mem);
-    if (!my_strcmp(args->cmd_array[0], "exit"))
+    args->tokens = tokenize_input(delete_newline(args->input), ctrl->mem);
+    args->tasks = build_tasks(args->tokens, ctrl->mem);
+    if (!my_strcmp(args->tasks->cmds->args[0], "exit"))
         return 2;
     return (exec_builtin2(args, ctrl) != 0);
 }
