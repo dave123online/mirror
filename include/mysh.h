@@ -42,12 +42,12 @@ typedef struct cmd_s {
     char *outfile;
     int append;
     char *herodoc_delim;
+    struct cmd_s *next;
 } cmd_t;
 typedef struct task_s {
-    cmd_t **cmds;
+    cmd_t *cmds;
     int cmd_count;
     struct task_s *next;
-    mem_t *mem;
 } task_t;
 typedef enum token_type {
     WORD,
@@ -81,4 +81,5 @@ char *rm_exec_sign(char *s);
 int exec_builtin_3(my_sh_t *args, control_t *ctrl);
 void add_to_history(char *cmd);
 token_t *tokenize_input(char *input, mem_t *mem);
+task_t *build_tasks(token_t *tokens, mem_t *mem);
 #endif

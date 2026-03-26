@@ -18,4 +18,5 @@ typedef struct memory_control_s {
 void *xmalloc(ssize_t size, mem_t *h);
 char *xstrdup(char *str, mem_t *h);
 void free_all(mem_t *h);
+void free_only_curr(void *ptr, mem_t *hd);
 #endif /* MY_H */
