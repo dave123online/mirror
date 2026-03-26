@@ -1,9 +1,8 @@
-*.c
 tester/README
 tester/tester.sh
 tester.sh
 mysh
 unit_tests
 test.c
-my_secured_malloc/librog/*.o
-my_secured_malloc/librog/*.a
+*.o
+*.a
