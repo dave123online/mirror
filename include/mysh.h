@@ -88,5 +88,9 @@ int exec_builtin_3(my_sh_t *args, control_t *ctrl);
 int my_sh(control_t *ctrl);
 void apply_redirections(my_sh_t *args, char **env);
 void restore_fds(my_sh_t *args);
-void display_prompt(my_sh_t **args, control_t *ctrl);
+void display_prompt(my_sh_t *args, control_t *ctrl);
+int exec_task(task_t *task, my_sh_t *args, control_t *ctrl);
+char **get_path(env_t *env, mem_t *mem);
+int search_in_path(char **cmd_array, char *path, mem_t *mem, char **env);
+int exec_builtin(my_sh_t *args, control_t *ctrl);
 #endif

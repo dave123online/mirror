@@ -28,7 +28,7 @@ static char *add_slash(char *s, mem_t *mem)
     return new;
 }
 
-static char **get_path(env_t *env, mem_t *mem)
+char **get_path(env_t *env, mem_t *mem)
 {
     env_t **temp = &env;
 
@@ -43,7 +43,7 @@ static char **get_path(env_t *env, mem_t *mem)
     return NULL;
 }
 
-static int search_in_path(char **cmd_array, char *path, mem_t *mem, char **env)
+int search_in_path(char **cmd_array, char *path, mem_t *mem, char **env)
 {
     char *buf = xmalloc(255, mem);
     char *real_path = add_slash(path, mem);
@@ -61,45 +61,6 @@ static int search_in_path(char **cmd_array, char *path, mem_t *mem, char **env)
         exit(0);
     }
     return 84;
-}
-
-static int parse_path(char **cmd_array, control_t *ctrl)
-{
-    int i = 0;
-    char **paths = get_path(ctrl->env, ctrl->mem);
-
-    if (!paths || !paths[0])
-        return 0;
-    while (paths[i] != NULL) {
-        if (!search_in_path(cmd_array, paths[i], ctrl->mem, ctrl->a_env))
-            return 1;
-        i++;
-    }
-    return 0;
-}
-
-static void run_command(my_sh_t *args, control_t *ctrl)
-{
-    args->r_value_2 = 10;
-    handle_signals();
-    handle_signals_2();
-    if (((args->tasks->cmds->args[0][0] == '.' ||
-                args->tasks->cmds->args[0][1] == '/')
-            || (args->tasks->cmds->args[0][0] == '/'))
-        && !access(args->tasks->cmds->args[0], X_OK)) {
-        args->r_value_2 = execve(args->tasks->cmds->args[0],
-            args->tasks->cmds->args, ctrl->a_env);
-    }
-    if (args->r_value_2 == -1) {
-        my_perror("%s: %s\n", args->tasks->cmds->args[0], strerror(errno));
-        exit(0);
-    }
-    if (!parse_path(args->tasks->cmds->args, ctrl)) {
-        my_perror("%s: Command not found.\n", delete_newline(args->input));
-        free_all(ctrl->mem);
-        free(args->input);
-        exit(0);
-    }
 }
 
 static int exec_builtin2(my_sh_t *args, control_t *ctrl)
@@ -123,14 +84,11 @@ static int exec_builtin2(my_sh_t *args, control_t *ctrl)
     return (exec_builtin_3(args, ctrl) != 0);
 }
 
-static int exec_builtin(my_sh_t *args, control_t *ctrl)
+int exec_builtin(my_sh_t *args, control_t *ctrl)
 {
-    display_prompt(&args, ctrl);
     add_to_history(args->input);
     if (!my_strcmp(args->input, "\n"))
         return 1;
-    args->tokens = tokenize_input(delete_newline(args->input), ctrl->mem);
-    args->tasks = build_tasks(args->tokens, ctrl->mem);
     apply_redirections(args, ctrl->a_env);
     if (!my_strcmp(args->tasks->cmds->args[0], "exit"))
         return 2;
@@ -150,47 +108,26 @@ static void init_args(my_sh_t *args, control_t *ctrl)
     getcwd(args->prev_dir, args->size);
 }
 
-static int sub_sh(my_sh_t *args)
-{
-    int status = -1;
-    int sig = -1;
-
-    if (args->r_value == 1)
-        return 1;
-    if (args->r_value == 2)
-        return 2;
-    args->pid = fork();
-    if (args->pid == -1)
-        handle_error(ERROR_FORK);
-    if (args->pid > 0) {
-        wait(&status);
-        if (WIFSIGNALED(status))
-            sig = WTERMSIG(status);
-        display_msg(sig, status);
-        return 1;
-    }
-    return 0;
-}
-
 int my_sh(control_t *ctrl)
 {
     my_sh_t args;
     int val;
+    int r;
 
     init_args(&args, ctrl);
     while (1) {
-        args.r_value = exec_builtin(&args, ctrl);
-        val = sub_sh(&args);
-        if (val == 1) {
-            restore_fds(&args);
+        display_prompt(&args, ctrl);
+        args.tokens = tokenize_input(delete_newline(args.input), ctrl->mem);
+        if (!args.tokens)
             continue;
-        }
-        if (val == 2) {
-            restore_fds(&args);
-            my_printf("exit\n");
+        args.tasks = build_tasks(args.tokens, ctrl->mem);
+        if (!args.tasks)
+            continue;
+        r = exec_task(args.tasks, &args, ctrl);
+        if (r == 1)
+            continue;
+        if (r == 2)
             break;
-        }
-        run_command(&args, ctrl);
     }
     free(args.input);
     return 0;
