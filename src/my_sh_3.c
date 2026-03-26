@@ -41,11 +41,11 @@ void display_history(void)
 
 int exec_builtin_3(my_sh_t *args, control_t *ctrl)
 {
-    if (!my_strcmp(args->cmd_array[0], "unsetenv")) {
-        x_unsetenv(&ctrl->env, args->cmd_array);
+    if (!my_strcmp(args->tasks->cmds->args[0], "unsetenv")) {
+        x_unsetenv(&ctrl->env, args->tasks->cmds->args);
         return 1;
     }
-    if (!my_strcmp(args->cmd_array[0], "history")) {
+    if (!my_strcmp(args->tasks->cmds->args[0], "history")) {
         display_history();
         return 1;
     }

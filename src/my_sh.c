@@ -80,17 +80,17 @@ static int parse_path(char **cmd_array, control_t *ctrl)
 
 static void run_command(my_sh_t *args, control_t *ctrl)
 {
-    int r_value = 10;
-
+    args->r_value_2 = 10;
     handle_signals();
     handle_signals_2();
-    if (((args->tasks->cmds->args[0][0] == '.' || args->tasks->cmds->args[0][1] == '/')
+    if (((args->tasks->cmds->args[0][0] == '.' ||
+                args->tasks->cmds->args[0][1] == '/')
             || (args->tasks->cmds->args[0][0] == '/'))
         && !access(args->tasks->cmds->args[0], X_OK)) {
-        r_value = execve(args->tasks->cmds->args[0],
+        args->r_value_2 = execve(args->tasks->cmds->args[0],
             args->tasks->cmds->args, ctrl->a_env);
     }
-    if (r_value == -1) {
+    if (args->r_value_2 == -1) {
         my_perror("%s: %s\n", args->tasks->cmds->args[0], strerror(errno));
         exit(0);
     }
@@ -125,23 +125,13 @@ static int exec_builtin2(my_sh_t *args, control_t *ctrl)
 
 static int exec_builtin(my_sh_t *args, control_t *ctrl)
 {
-    if (!getcwd(args->buf, 1000))
-        return handle_error(ERROR_GETCWD);
-    if (isatty(0)) {
-        my_printf("\033[1;34m|-[ %s ] \033[0m",
-            get_username(ctrl->env, ctrl->mem));
-        my_printf("%s\n|_", get_path_version(args->buf, ctrl->mem));
-    }
-    if (getline(&args->input, &args->size, stdin) == -1) {
-        if (errno != ENOTTY)
-            handle_error(ERROR_GETLINE);
-        exit(0);
-    }
+    display_prompt(&args, ctrl);
     add_to_history(args->input);
     if (!my_strcmp(args->input, "\n"))
         return 1;
     args->tokens = tokenize_input(delete_newline(args->input), ctrl->mem);
     args->tasks = build_tasks(args->tokens, ctrl->mem);
+    apply_redirections(args, ctrl->a_env);
     if (!my_strcmp(args->tasks->cmds->args[0], "exit"))
         return 2;
     return (exec_builtin2(args, ctrl) != 0);
@@ -191,9 +181,12 @@ int my_sh(control_t *ctrl)
     while (1) {
         args.r_value = exec_builtin(&args, ctrl);
         val = sub_sh(&args);
-        if (val == 1)
+        if (val == 1) {
+            restore_fds(&args);
             continue;
+        }
         if (val == 2) {
+            restore_fds(&args);
             my_printf("exit\n");
             break;
         }

@@ -10,7 +10,7 @@ NAME = mysh
 SRC = src/change_directory.c my_secured_malloc/manage_memory.c\
     src/main.c src/manip_env.c src/my_sh_2.c src/my_sh.c\
     src/utils.c src/my_sh_3.c src/build_tasks.c src/utils_build_jobs.c \
-    src/parse_input.c
+    src/parse_input.c src/utils_my_sh.c
 
 CC = epiclang
 

@@ -57,13 +57,15 @@ typedef struct my_sh_s {
     char *username;
     char buf[1000];
     size_t size;
-    char **cmd_array;
     token_t *tokens;
     task_t *tasks;
     pid_t pid;
     int r_value;
     char *prev_dir;
     char temp[90];
+    int open_fd;
+    int bk_fds[2];
+    int r_value_2;
 } my_sh_t;
 int handle_error(int error_code);
 int change_directory(char **cmd_line, env_t *env, char *prev_dir, mem_t *mem);
@@ -84,4 +86,7 @@ token_t *tokenize_input(char *input, mem_t *mem);
 task_t *build_tasks(token_t *tokens, mem_t *mem);
 int exec_builtin_3(my_sh_t *args, control_t *ctrl);
 int my_sh(control_t *ctrl);
+void apply_redirections(my_sh_t *args, char **env);
+void restore_fds(my_sh_t *args);
+void display_prompt(my_sh_t **args, control_t *ctrl);
 #endif
