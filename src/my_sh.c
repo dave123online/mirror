@@ -111,7 +111,6 @@ static void init_args(my_sh_t *args, control_t *ctrl)
 int my_sh(control_t *ctrl)
 {
     my_sh_t args;
-    int val;
     int r;
 
     init_args(&args, ctrl);
