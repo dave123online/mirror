@@ -7,3 +7,4 @@ test.c
 *.o
 *.a
 help.md
+.history
