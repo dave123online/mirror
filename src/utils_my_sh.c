@@ -125,6 +125,7 @@ static int exec_cmd(my_sh_t *args, control_t *ctrl, int should_fork)
 {
     int val;
 
+    apply_redirections(args, ctrl->a_env);
     args->r_value = exec_builtin(args, ctrl);
     val = sub_sh(args, should_fork);
     if (val == 1) {

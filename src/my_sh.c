@@ -128,6 +128,7 @@ static int exec_tasks(my_sh_t *args, control_t *ctrl)
     task_t *cur = args->tasks;
 
     while (cur) {
+        args->tasks = cur;
         r = exec_task(cur, args, ctrl);
         if (r == 2)
             return 2;

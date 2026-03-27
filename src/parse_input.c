@@ -38,15 +38,32 @@ static void init_tokenization(tokenize_t *args)
     args->i = 0;
 }
 
+static void flush_word(tokenize_t *args, mem_t *mem)
+{
+    if (args->idx > 0) {
+        args->word[args->idx] = '\0';
+        append_tok(args, WORD, args->word, mem);
+        args->idx = 0;
+    }
+}
+
 static int sub_tokenize_input_3(tokenize_t *args, char *input, mem_t *mem)
 {
     if (args->cur == '|' && input[args->i + 1] == '|') {
+        flush_word(args, mem);
         my_perror("syntax error near unexpected token `||'\n");
         return -1;
     }
     if (args->cur == '|') {
+        flush_word(args, mem);
         append_tok(args, PIPE, NULL, mem);
         args->i++;
+        return 1;
+    }
+    if (args->cur == '<' && input[args->i + 1] == '<') {
+        flush_word(args, mem);
+        append_tok(args, HERODOC, NULL, mem);
+        args->i += 2;
         return 1;
     }
     return 0;
@@ -54,12 +71,8 @@ static int sub_tokenize_input_3(tokenize_t *args, char *input, mem_t *mem)
 
 static int sub_tokenize_input_2(tokenize_t *args, char *input, mem_t *mem)
 {
-    if (args->cur == '<' && input[args->i + 1] == '<') {
-        append_tok(args, HERODOC, NULL, mem);
-        args->i += 2;
-        return 1;
-    }
     if (args->cur == '<') {
+        flush_word(args, mem);
         append_tok(args, REDIR_IN, NULL, mem);
         args->i++;
         return 1;
@@ -79,16 +92,19 @@ static int sub_tokenize_input_2(tokenize_t *args, char *input, mem_t *mem)
 static int sub_tokenize_input(tokenize_t *args, char *input, mem_t *mem)
 {
     if (args->cur == ';') {
+        flush_word(args, mem);
         append_tok(args, SEMICOLON, NULL, mem);
         args->i++;
         return 1;
     }
     if (args->cur == '>' && input[args->i + 1] == '>') {
+        flush_word(args, mem);
         append_tok(args, APPEND, NULL, mem);
         args->i += 2;
         return 1;
     }
     if (args->cur == '>') {
+        flush_word(args, mem);
         append_tok(args, REDIR_OUT, NULL, mem);
         args->i++;
         return 1;
