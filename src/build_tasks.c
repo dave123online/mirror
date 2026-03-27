@@ -30,10 +30,11 @@ void init_cmd(cmd_t **cmds)
 {
     (*cmds)->append = 0;
     (*cmds)->args = NULL;
-    (*cmds)->herodoc_delim = 0;
+    (*cmds)->heredoc_delim = 0;
     (*cmds)->infile = 0;
     (*cmds)->next = NULL;
     (*cmds)->outfile = 0;
+    (*cmds)->heredoc_fd = -1;
 }
 
 static task_t *flush(t_vars_t *v, mem_t *mem)

@@ -6,7 +6,6 @@
 */
 
 #include "../include/mysh.h"
-#include "../include/librog.h"
 #include "../include/task.h"
 static void add_to_cmd(token_t *tok, char **cmd, int *idx, mem_t *mem)
 {
@@ -98,9 +97,9 @@ int handle_remaining(t_vars_t *v, token_t **tok, mem_t *mem)
         (*tok) = (*tok)->next;
         return 1;
     }
-    if ((*tok)->type == HERODOC) {
+    if ((*tok)->type == HEREDOC) {
         (*tok) = (*tok)->next;
-        v->cmds_c->herodoc_delim = xstrdup((*tok)->value, mem);
+        v->cmds_c->heredoc_delim = xstrdup((*tok)->value, mem);
         v->skip = 1;
         (*tok) = (*tok)->next;
         return 1;

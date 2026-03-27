@@ -27,7 +27,7 @@ typedef enum token_type {
     REDIR_IN,
     REDIR_OUT,
     APPEND,
-    HERODOC
+    HEREDOC
 } tk_type_t;
 typedef struct token {
     tk_type_t type;
@@ -39,7 +39,8 @@ typedef struct cmd_s {
     char *infile;
     char *outfile;
     int append;
-    char *herodoc_delim;
+    char *heredoc_delim;
+    int heredoc_fd;
     struct cmd_s *next;
 } cmd_t;
 typedef struct task_s {
@@ -95,4 +96,5 @@ int search_in_path(char **cmd_array, char *path, mem_t *mem, char **env);
 int exec_builtin(my_sh_t *args, control_t *ctrl);
 int my_pipe(task_t *task, my_sh_t *args, control_t *ctrl);
 int parse_path(char **cmd_array, control_t *ctrl);
+int heredoc_fd(char *delim);
 #endif

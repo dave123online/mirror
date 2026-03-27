@@ -8,3 +8,5 @@ test.c
 *.a
 help.md
 .history
+test
+*sh

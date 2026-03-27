@@ -62,7 +62,7 @@ static int sub_tokenize_input_3(tokenize_t *args, char *input, mem_t *mem)
     }
     if (args->cur == '<' && input[args->i + 1] == '<') {
         flush_word(args, mem);
-        append_tok(args, HERODOC, NULL, mem);
+        append_tok(args, HEREDOC, NULL, mem);
         args->i += 2;
         return 1;
     }
