@@ -18,8 +18,9 @@ FLAGS = -g -W -Wall -Wextra -Wno-unused-parameter -Wno-incompatible-pointer-type
 
 LPATH = ./librog/librog.a
 
-TEST_FILES = tests/*.c \
-	src/change_directory.c my_secured_malloc/manage_memory.c\
+TEST_FILES = tests/testing_redirections.c tests/testing_build_tasks.c\
+    tests/testing_tokenizer.c tests/testing_my_perror.c\
+    src/change_directory.c my_secured_malloc/manage_memory.c\
     src/manip_env.c src/my_sh_2.c src/my_sh.c\
     src/utils.c src/my_sh_3.c src/build_tasks.c src/utils_build_tasks.c \
     src/parse_input.c src/utils_my_sh.c src/my_pipe.c
