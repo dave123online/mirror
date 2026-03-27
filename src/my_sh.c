@@ -8,11 +8,7 @@
 #include "../include/librog.h"
 #include "../include/xmalloc.h"
 #include "../include/mysh.h"
-#include "../include/myconstants.h"
-#include <asm-generic/errno-base.h>
-#include <stdlib.h>
 #include <sys/wait.h>
-#include <unistd.h>
 static char *add_slash(char *s, mem_t *mem)
 {
     int len = my_strlen(s);
@@ -28,19 +24,41 @@ static char *add_slash(char *s, mem_t *mem)
     return new;
 }
 
-char **get_path(env_t *env, mem_t *mem)
+static void handle_in_redir(my_sh_t *args, char **env)
 {
-    env_t **temp = &env;
-
-    if (!env)
-        return NULL;
-    for (; *temp; temp = &(*temp)->next) {
-        if (!my_strncmp((*temp)->env_var, "PATH", 4)
-            && (*temp)->env_var[my_strlen("PATH")] == '=') {
-            return (split_string(&((*temp)->env_var[5]), ':', mem));
+    if (args->tasks->cmds->infile) {
+        args->bk_fds[0] = dup(STDIN_FILENO);
+        args->open_fd = open(args->tasks->cmds->infile, O_RDONLY);
+        if (args->open_fd == -1) {
+            perror("open");
+            return;
         }
+        dup2(args->open_fd, STDIN_FILENO);
+        close(args->open_fd);
     }
-    return NULL;
+}
+
+static void handle_out_redir(my_sh_t *args, char **env)
+{
+    if (args->tasks->cmds->outfile) {
+        args->bk_fds[1] = dup(STDOUT_FILENO);
+        args->open_fd = open(args->tasks->cmds->outfile, O_WRONLY | O_CREAT |
+            (args->tasks->cmds->append ? O_APPEND : 0), 0644);
+        if (args->open_fd == -1) {
+            perror("open");
+            return;
+        }
+        dup2(args->open_fd, STDOUT_FILENO);
+        close(args->open_fd);
+    }
+}
+
+void apply_redirections(my_sh_t *args, char **env)
+{
+    args->bk_fds[0] = -1;
+    args->bk_fds[1] = -1;
+    handle_in_redir(args, env);
+    handle_out_redir(args, env);
 }
 
 int search_in_path(char **cmd_array, char *path, mem_t *mem, char **env)
@@ -86,10 +104,6 @@ static int exec_builtin2(my_sh_t *args, control_t *ctrl)
 
 int exec_builtin(my_sh_t *args, control_t *ctrl)
 {
-    add_to_history(args->input);
-    if (!my_strcmp(args->input, "\n"))
-        return 1;
-    apply_redirections(args, ctrl->a_env);
     if (!my_strcmp(args->tasks->cmds->args[0], "exit"))
         return 2;
     return (exec_builtin2(args, ctrl) != 0);
@@ -108,25 +122,38 @@ static void init_args(my_sh_t *args, control_t *ctrl)
     getcwd(args->prev_dir, args->size);
 }
 
+static int exec_tasks(my_sh_t *args, control_t *ctrl)
+{
+    int r;
+    task_t *cur = args->tasks;
+
+    while (cur) {
+        r = exec_task(cur, args, ctrl);
+        if (r == 2)
+            return 2;
+        cur = cur->next;
+    }
+    return 0;
+}
+
 int my_sh(control_t *ctrl)
 {
     my_sh_t args;
-    int r;
 
     init_args(&args, ctrl);
     while (1) {
         display_prompt(&args, ctrl);
+        add_to_history(args.input);
         args.tokens = tokenize_input(delete_newline(args.input), ctrl->mem);
         if (!args.tokens)
             continue;
         args.tasks = build_tasks(args.tokens, ctrl->mem);
-        if (!args.tasks)
+        if (!args.tasks || !args.tasks->cmds || !args.tasks->cmds->args)
             continue;
-        r = exec_task(args.tasks, &args, ctrl);
-        if (r == 1)
-            continue;
-        if (r == 2)
+        if (exec_tasks(&args, ctrl) == 2) {
+            my_printf("exit\n");
             break;
+        }
     }
     free(args.input);
     return 0;

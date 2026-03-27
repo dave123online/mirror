@@ -8,41 +8,19 @@
 #include "../include/mysh.h"
 #include "../include/librog.h"
 #include "../include/myconstants.h"
-static void handle_in_redir(my_sh_t *args, char **env)
+char **get_path(env_t *env, mem_t *mem)
 {
-    if (args->tasks->cmds->infile) {
-        args->bk_fds[0] = dup(STDIN_FILENO);
-        args->open_fd = open(args->tasks->cmds->infile, O_RDONLY);
-        if (args->open_fd == -1) {
-            perror("open");
-            return;
-        }
-        dup2(args->open_fd, STDIN_FILENO);
-        close(args->open_fd);
-    }
-}
+    env_t **temp = &env;
 
-static void handle_out_redir(my_sh_t *args, char **env)
-{
-    if (args->tasks->cmds->outfile) {
-        args->bk_fds[1] = dup(STDOUT_FILENO);
-        args->open_fd = open(args->tasks->cmds->outfile, O_WRONLY | O_CREAT |
-            (args->tasks->cmds->append ? O_APPEND : 0), 0644);
-        if (args->open_fd == -1) {
-            perror("open");
-            return;
+    if (!env)
+        return NULL;
+    for (; *temp; temp = &(*temp)->next) {
+        if (!my_strncmp((*temp)->env_var, "PATH", 4)
+            && (*temp)->env_var[my_strlen("PATH")] == '=') {
+            return (split_string(&((*temp)->env_var[5]), ':', mem));
         }
-        dup2(args->open_fd, STDOUT_FILENO);
-        close(args->open_fd);
     }
-}
-
-void apply_redirections(my_sh_t *args, char **env)
-{
-    args->bk_fds[0] = -1;
-    args->bk_fds[1] = -1;
-    handle_in_redir(args, env);
-    handle_out_redir(args, env);
+    return NULL;
 }
 
 void restore_fds(my_sh_t *args)
@@ -73,7 +51,7 @@ void display_prompt(my_sh_t *args, control_t *ctrl)
     }
 }
 
-static int parse_path(char **cmd_array, control_t *ctrl)
+int parse_path(char **cmd_array, control_t *ctrl)
 {
     int i = 0;
     char **paths = get_path(ctrl->env, ctrl->mem);
@@ -112,7 +90,22 @@ static void run_command(my_sh_t *args, control_t *ctrl)
     }
 }
 
-static int sub_sh(my_sh_t *args)
+static int helper_sub_sh(my_sh_t *args, int *status, int *sig)
+{
+    args->pid = fork();
+    if (args->pid == -1)
+        handle_error(ERROR_FORK);
+    if (args->pid > 0) {
+        wait(status);
+        if (WIFSIGNALED(*status))
+            *sig = WTERMSIG(*status);
+        display_msg(*sig, *status);
+        return 1;
+    }
+    return 0;
+}
+
+static int sub_sh(my_sh_t *args, int should_fork)
 {
     int status = -1;
     int sig = -1;
@@ -121,25 +114,19 @@ static int sub_sh(my_sh_t *args)
         return 1;
     if (args->r_value == 2)
         return 2;
-    args->pid = fork();
-    if (args->pid == -1)
-        handle_error(ERROR_FORK);
-    if (args->pid > 0) {
-        wait(&status);
-        if (WIFSIGNALED(status))
-            sig = WTERMSIG(status);
-        display_msg(sig, status);
-        return 1;
+    if (should_fork) {
+        if (helper_sub_sh(args, &status, &sig))
+            return 1;
     }
     return 0;
 }
 
-int exec_cmd(my_sh_t *args, control_t *ctrl)
+static int exec_cmd(my_sh_t *args, control_t *ctrl, int should_fork)
 {
     int val;
 
     args->r_value = exec_builtin(args, ctrl);
-    val = sub_sh(args);
+    val = sub_sh(args, should_fork);
     if (val == 1) {
         restore_fds(args);
         return 1;
@@ -155,10 +142,7 @@ int exec_cmd(my_sh_t *args, control_t *ctrl)
 
 int exec_task(task_t *task, my_sh_t *args, control_t *ctrl)
 {
-    if (task->cmd_count == 1) {
-        return exec_cmd(args, ctrl);
-    }
-    /*while (task->cmds != NULL) {
-        my_
-    }*/
+    if (task->cmd_count == 1)
+        return exec_cmd(args, ctrl, 1);
+    return my_pipe(task, args, ctrl);
 }

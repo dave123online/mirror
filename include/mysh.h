@@ -93,4 +93,6 @@ int exec_task(task_t *task, my_sh_t *args, control_t *ctrl);
 char **get_path(env_t *env, mem_t *mem);
 int search_in_path(char **cmd_array, char *path, mem_t *mem, char **env);
 int exec_builtin(my_sh_t *args, control_t *ctrl);
+int my_pipe(task_t *task, my_sh_t *args, control_t *ctrl);
+int parse_path(char **cmd_array, control_t *ctrl);
 #endif
