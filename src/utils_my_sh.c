@@ -83,10 +83,10 @@ static void run_command(my_sh_t *args, control_t *ctrl)
         exit(0);
     }
     if (!parse_path(args->tasks->cmds->args, ctrl)) {
-        my_perror("%s: Command not found.\n", delete_newline(args->input));
+        my_perror("%s: Command not found.\n", args->tasks->cmds->args[0]);
         free_all(ctrl->mem);
         free(args->input);
-        exit(0);
+        exit(1);
     }
 }
 
