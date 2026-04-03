@@ -14,23 +14,10 @@ env:
   CC: clang
 
 jobs:
-  check_not_mirror:
-    name: Check if we are not running in the mirror repository
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fail if running inside the mirror repository
-        run: |
-          MIRROR_REPO=$(echo "$MIRROR_SSH_URL" | sed 's|.*:\(.*\)\.git$|\1|')
-          if [ "$GITHUB_REPOSITORY" = "$MIRROR_REPO" ]; then
-              echo "This the mirror repository. Skipping all jobs."
-              exit 1
-          fi
-          echo "Not the mirror repository. Proceeding."
-
   check_compilation_and_coding_style:
+    if: format('git@github.com:{0}.git', github.repository) != env.MIRROR_SSH_URL
     name: Check Compilation and Coding Style
     runs-on: ubuntu-latest
-    needs: check_not_mirror
     container:
       image: epitechcontent/epitest-docker:latest
     steps:
