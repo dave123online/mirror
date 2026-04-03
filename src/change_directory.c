@@ -11,7 +11,6 @@
 char *get_home(env_t *env, mem_t *mem)
 {
     env_t **temp = &env;
-
     for (; *temp; temp = &(*temp)->next) {
         if (!my_strncmp("HOME", (*temp)->env_var, 4)) {
             return (split_string((*temp)->env_var, '=', mem)[1]);
