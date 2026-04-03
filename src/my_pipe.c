@@ -77,12 +77,12 @@ static int sub_pipe(pipe_t *v, my_sh_t *args, control_t *ctrl)
     return 0;
 }
 
-static void init_pipe(pipe_t *pipe, task_t **task)
+static void init_pipe(pipe_t *pipe, task_t **task, mem_t *mem)
 {
     pipe->cmd = (*task)->cmds;
     pipe->prev_fd = -1;
     pipe->n = (*task)->cmd_count;
-    pipe->pids = malloc(sizeof(pid_t) * pipe->n);
+    pipe->pids = xmalloc(sizeof(pid_t) * pipe->n, mem);
     pipe->i = 0;
 }
 
@@ -90,7 +90,7 @@ int my_pipe(task_t *task, my_sh_t *args, control_t *ctrl)
 {
     pipe_t v = {0};
 
-    init_pipe(&v, &task);
+    init_pipe(&v, &task, ctrl->mem);
     while (v.cmd) {
         if (sub_pipe(&v, args, ctrl))
             return 1;

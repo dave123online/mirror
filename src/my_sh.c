@@ -106,6 +106,10 @@ int exec_builtin(my_sh_t *args, control_t *ctrl)
 {
     if (!my_strcmp(args->tasks->cmds->args[0], "exit"))
         return 2;
+    if (!my_strcmp(args->tasks->cmds->args[0], "42")) {
+        my_printf("This is my shell\n");
+        return 1;
+    }
     return (exec_builtin2(args, ctrl) != 0);
 }
 
