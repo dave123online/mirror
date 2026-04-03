@@ -48,7 +48,7 @@ jobs:
       - name: Display coding-style errors as annotations
         run: |
           if [ -f coding-style-reports.log ]; then
-            while IFS= read -r line; do
+            while L= read -r line; do
               file=$(echo "$line" | cut -d':' -f1 | sed 's|^./||')
               lineno=$(echo "$line" | cut -d':' -f2)
               severity=$(echo "$line" | cut -d':' -f3 | tr -d ' ')
