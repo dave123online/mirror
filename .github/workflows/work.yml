@@ -15,7 +15,7 @@ env:
 
 jobs:
   check_compilation_and_coding_style:
-    #if: format('git@github.com:{0}.git', github.repository) != env.MIRROR_SSH_URL
+    if: format('git@github.com:{0}.git', github.repository) != env.MIRROR_SSH_URL
     name: Check Compilation and Coding Style
     runs-on: ubuntu-latest
     container:
